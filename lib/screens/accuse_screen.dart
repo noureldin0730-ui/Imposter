@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../data/cases_data.dart';
+import '../data/generators.dart';
 
 class P {
   static const bg = Color(0xFF0A0807);
@@ -43,7 +43,7 @@ class _AccuseScreenState extends State<AccuseScreen>
     )..forward();
 
     if (widget.correct) {
-      HapticFeedback.mediumImpact();
+      HapticFeedback.lightImpact();
     } else {
       HapticFeedback.heavyImpact();
     }
@@ -74,8 +74,6 @@ class _AccuseScreenState extends State<AccuseScreen>
             child: Column(
               children: [
                 const Spacer(),
-
-                // ────── الأيقونة ──────
                 Container(
                   width: 120,
                   height: 120,
@@ -98,8 +96,6 @@ class _AccuseScreenState extends State<AccuseScreen>
                   ),
                 ),
                 const SizedBox(height: 32),
-
-                // ────── العنوان ──────
                 Text(
                   c ? 'الحقيقة اتكشفت' : 'غلط',
                   textDirection: TextDirection.rtl,
@@ -111,8 +107,6 @@ class _AccuseScreenState extends State<AccuseScreen>
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // ────── النص ──────
                 Container(
                   padding: const EdgeInsets.all(20),
                   decoration: BoxDecoration(
@@ -177,10 +171,7 @@ class _AccuseScreenState extends State<AccuseScreen>
                     ],
                   ),
                 ),
-
                 const Spacer(),
-
-                // ────── زر ──────
                 GestureDetector(
                   onTap: _goBack,
                   child: Container(
