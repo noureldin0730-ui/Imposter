@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../data/cases_data.dart';
+import '../data/generators.dart';
 import '../data/save_manager.dart';
 import 'accuse_screen.dart';
 
@@ -31,7 +32,7 @@ class _CaseScreenState extends State<CaseScreen>
   @override
   void initState() {
     super.initState();
-    _case = kCases.firstWhere((c) => c.id == widget.caseId);
+    _case = getCase(widget.caseId);
     _tabs = TabController(length: 5, vsync: this);
   }
 
@@ -44,9 +45,9 @@ class _CaseScreenState extends State<CaseScreen>
   Future<void> _onAccuse(String suspectName) async {
     final isCorrect = suspectName == _case.killer;
     if (isCorrect) {
-      HapticFeedback.mediumImpact();
+      HapticFeedback.lightImpact();
       await SaveManager.setStars(_case.id, 3);
-      if (_case.id < kCases.length) {
+      if (_case.id < kTotalCases) {
         await SaveManager.unlock(_case.id + 1);
         await SaveManager.setCurrentCase(_case.id + 1);
       }
@@ -99,7 +100,6 @@ class _CaseScreenState extends State<CaseScreen>
       body: SafeArea(
         child: Column(
           children: [
-            // ────── الشريط العلوي ──────
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
               child: Row(
@@ -118,7 +118,7 @@ class _CaseScreenState extends State<CaseScreen>
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'القضية ${_case.id}',
+                          'القضية ${_case.id} من $kTotalCases',
                           style: const TextStyle(
                             color: P.rare,
                             fontSize: 11,
@@ -142,8 +142,6 @@ class _CaseScreenState extends State<CaseScreen>
               ),
             ),
             const Divider(color: Color(0xFF1A1A1A), height: 1),
-
-            // ────── التابات ──────
             Container(
               color: P.dark,
               child: TabBar(
@@ -166,8 +164,6 @@ class _CaseScreenState extends State<CaseScreen>
                 ],
               ),
             ),
-
-            // ────── محتوى التاب ──────
             Expanded(
               child: TabBarView(
                 controller: _tabs,
@@ -180,8 +176,6 @@ class _CaseScreenState extends State<CaseScreen>
                 ],
               ),
             ),
-
-            // ────── زر الاتهام ──────
             Container(
               padding: const EdgeInsets.fromLTRB(20, 10, 20, 16),
               decoration: const BoxDecoration(
@@ -202,7 +196,7 @@ class _CaseScreenState extends State<CaseScreen>
                     boxShadow: [
                       BoxShadow(
                         color: P.rare.withOpacity(0.3),
-                        blurRadius: 20,
+                        blurRadius: 16,
                       ),
                     ],
                   ),
@@ -238,9 +232,17 @@ class _CrimeTab extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _InfoBlock(icon: Icons.location_on, label: 'المكان', value: c.location),
+          _InfoBlock(
+            icon: Icons.location_on,
+            label: 'المكان',
+            value: c.location,
+          ),
           const SizedBox(height: 14),
-          _InfoBlock(icon: Icons.access_time, label: 'الوقت', value: c.time),
+          _InfoBlock(
+            icon: Icons.access_time,
+            label: 'الوقت',
+            value: c.time,
+          ),
           const SizedBox(height: 24),
           const Text(
             'وصف الجريمة',
@@ -277,74 +279,69 @@ class _VictimTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              color: P.dark,
-              border: Border.all(color: P.mid.withOpacity(0.4)),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: P.dark,
+          border: Border.all(color: P.mid.withOpacity(0.4)),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(color: P.mid, width: 2),
-                      ),
-                      child: const Icon(Icons.person, color: P.mid),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            c.victim.name,
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(
-                              color: P.white,
-                              fontSize: 18,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            '${c.victim.age} سنة • ${c.victim.job}',
-                            textDirection: TextDirection.rtl,
-                            style: const TextStyle(
-                              color: P.dim,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: P.mid, width: 2),
+                  ),
+                  child: const Icon(Icons.person, color: P.mid),
                 ),
-                const SizedBox(height: 20),
-                const Divider(color: Color(0xFF1A1A1A)),
-                const SizedBox(height: 12),
-                Text(
-                  c.victim.description,
-                  textDirection: TextDirection.rtl,
-                  style: const TextStyle(
-                    color: P.white,
-                    fontSize: 14,
-                    height: 1.9,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        c.victim.name,
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          color: P.white,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${c.victim.age} سنة • ${c.victim.job}',
+                        textDirection: TextDirection.rtl,
+                        style: const TextStyle(
+                          color: P.dim,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 20),
+            const Divider(color: Color(0xFF1A1A1A)),
+            const SizedBox(height: 12),
+            Text(
+              c.victim.description,
+              textDirection: TextDirection.rtl,
+              style: const TextStyle(
+                color: P.white,
+                fontSize: 14,
+                height: 1.9,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -384,7 +381,7 @@ class _SuspectsTab extends StatelessWidget {
                       border: Border.all(color: P.mid, width: 1.5),
                     ),
                     child: Text(
-                      s.name.characters.first,
+                      s.name.substring(0, 1),
                       style: const TextStyle(
                         color: P.rare,
                         fontSize: 18,
@@ -656,7 +653,7 @@ class _AccuseSheet extends StatelessWidget {
           ),
           const SizedBox(height: 6),
           const Text(
-            'لو غلط، هتخسر محاولة',
+            'لو غلط، هترجع تقرأ تاني',
             textDirection: TextDirection.rtl,
             style: TextStyle(color: P.dim, fontSize: 12),
           ),
@@ -686,7 +683,7 @@ class _AccuseSheet extends StatelessWidget {
                         border: Border.all(color: P.mid, width: 1.5),
                       ),
                       child: Text(
-                        s.name.characters.first,
+                        s.name.substring(0, 1),
                         style: const TextStyle(
                           color: P.rare,
                           fontWeight: FontWeight.w700,
