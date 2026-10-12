@@ -62,7 +62,7 @@ class _MapScreenState extends State<MapScreen> {
       );
       return;
     }
-    HapticFeedback.mediumImpact();
+    HapticFeedback.lightImpact();
     await Navigator.of(context).push(
       MaterialPageRoute(builder: (_) => CaseScreen(caseId: caseId)),
     );
@@ -111,7 +111,7 @@ class _MapScreenState extends State<MapScreen> {
                         const Icon(Icons.star, color: P.gold, size: 16),
                         const SizedBox(width: 6),
                         Text(
-                          '$_totalStars / ${kCases.length * 3}',
+                          '$_totalStars / ${kTotalCases * 3}',
                           style: const TextStyle(
                             color: P.gold,
                             fontSize: 13,
@@ -142,22 +142,22 @@ class _MapScreenState extends State<MapScreen> {
                   horizontal: 24,
                   vertical: 20,
                 ),
-                itemCount: kCases.length,
+                itemCount: kTotalCases,
                 itemBuilder: (context, index) {
-                  final c = kCases[index];
-                  final stars = _stars[c.id] ?? 0;
+                  final caseId = index + 1;
+                  final stars = _stars[caseId] ?? 0;
+                  final isCurrent = caseId == _currentCase;
                   final offset = _zigzagOffset(index);
 
                   return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.only(bottom: 14),
                     child: Align(
                       alignment: Alignment(offset, 0),
                       child: _CaseNode(
-                        caseId: c.id,
-                        title: c.title,
+                        caseId: caseId,
                         stars: stars,
-                        isCurrent: c.id == _currentCase,
-                        onTap: () => _openCase(c.id),
+                        isCurrent: isCurrent,
+                        onTap: () => _openCase(caseId),
                       ),
                     ),
                   );
@@ -179,14 +179,12 @@ class _MapScreenState extends State<MapScreen> {
 // ═══════════════ دايرة القضية ═══════════════
 class _CaseNode extends StatelessWidget {
   final int caseId;
-  final String title;
   final int stars;
   final bool isCurrent;
   final VoidCallback onTap;
 
   const _CaseNode({
     required this.caseId,
-    required this.title,
     required this.stars,
     required this.isCurrent,
     required this.onTap,
@@ -199,10 +197,9 @@ class _CaseNode extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 300),
-            width: 80,
-            height: 80,
+          Container(
+            width: 70,
+            height: 70,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               color: const Color(0xFF141110),
@@ -215,48 +212,18 @@ class _CaseNode extends StatelessWidget {
                   color: (isCurrent ? P.rare : P.mid).withOpacity(
                     isCurrent ? 0.7 : 0.3,
                   ),
-                  blurRadius: isCurrent ? 30 : 12,
+                  blurRadius: isCurrent ? 24 : 8,
                   spreadRadius: isCurrent ? 2 : 0,
                 ),
               ],
             ),
             alignment: Alignment.center,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text(
-                  'CASE',
-                  style: TextStyle(
-                    color: P.dim,
-                    fontSize: 9,
-                    letterSpacing: 2,
-                  ),
-                ),
-                Text(
-                  '$caseId',
-                  style: TextStyle(
-                    color: isCurrent ? P.rare : P.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 1,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 6),
-          SizedBox(
-            width: 140,
             child: Text(
-              title,
-              textAlign: TextAlign.center,
-              textDirection: TextDirection.rtl,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+              '$caseId',
               style: TextStyle(
-                color: isCurrent ? P.white : P.dim,
-                fontSize: 11,
-                letterSpacing: 1,
+                color: isCurrent ? P.rare : P.white,
+                fontSize: 20,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
@@ -270,7 +237,7 @@ class _CaseNode extends StatelessWidget {
                 child: Icon(
                   filled ? Icons.star : Icons.star_border,
                   color: filled ? P.gold : P.dim,
-                  size: 14,
+                  size: 12,
                 ),
               );
             }),
