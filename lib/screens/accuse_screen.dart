@@ -18,12 +18,14 @@ class AccuseScreen extends StatefulWidget {
   final Case caseData;
   final String accused;
   final bool correct;
+  final int stars;
 
   const AccuseScreen({
     super.key,
     required this.caseData,
     required this.accused,
     required this.correct,
+    required this.stars,
   });
 
   @override
@@ -137,6 +139,35 @@ class _AccuseScreenState extends State<AccuseScreen>
                           ),
                         ),
                         const SizedBox(height: 16),
+
+                        // ═══ النجوم ═══
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: List.generate(3, (i) {
+                            final filled = i < widget.stars;
+                            return Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              child: Icon(
+                                filled ? Icons.star : Icons.star_border,
+                                color: filled ? P.gold : P.dim,
+                                size: 40,
+                              ),
+                            );
+                          }),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _starsLabel(widget.stars),
+                          textDirection: TextDirection.rtl,
+                          style: TextStyle(
+                            color: P.gold.withOpacity(0.8),
+                            fontSize: 13,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+
                         const Divider(color: Color(0xFF1A1A1A)),
                         const SizedBox(height: 16),
                         Text(
@@ -201,5 +232,13 @@ class _AccuseScreenState extends State<AccuseScreen>
         ),
       ),
     );
+  }
+
+  // ═══ نص النجوم ═══
+  String _starsLabel(int stars) {
+    if (stars == 3) return 'قرار مثالي — من أول محاولة';
+    if (stars == 2) return 'قرار كويس — بعد محاولة فاشلة';
+    if (stars == 1) return 'قرار مقبول — بعد محاولتين فاشلتين';
+    return '';
   }
 }
