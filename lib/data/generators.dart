@@ -90,13 +90,32 @@ Case generateCase(int caseId) {
   final killerIndex = rng.nextInt(suspectsList.length);
   final killerName = suspectsList[killerIndex];
 
+  // ═══ حجج متشابهة للكل — صعب ═══
+  final alibis = [
+    'كنت في البيت لوحدي',
+    'كنت نايم',
+    'مشيت بدري',
+    'كنت في الشغل، مفيش حد معايا',
+    'كنت في مكان مزدحم ومش مركز',
+    'كنت في الطريق',
+    'كنت في مكالمة',
+    'كنت في سيارة تاكسي',
+    'كنت في السوق',
+    'كنت بتمشى',
+    'كنت في القهوة',
+    'كنت في بيت صاحبي',
+  ];
+  alibis.shuffle(rng);
+
   final suspects = <Suspect>[];
   for (int i = 0; i < suspectsList.length; i++) {
     final isKiller = i == killerIndex;
-    final motive = _pickMotive(rng);
+    final motive = isKiller
+        ? _pickKillerMotive(rng)
+        : _pickMotive(rng); // دوافع مختلفة للقاتل
     final relation = _pickRelation(rng);
     final age = 22 + rng.nextInt(40);
-    final alibi = _pickAlibi(rng, isKiller);
+    final alibi = alibis[i % alibis.length];
 
     suspects.add(Suspect(
       name: suspectsList[i],
@@ -107,25 +126,63 @@ Case generateCase(int caseId) {
     ));
   }
 
-  final evidencePoolCopy = List<EvidenceTemplate>.from(kEvidencePool)
-    ..shuffle(rng);
-  final evidences = evidencePoolCopy.take(4).map((e) {
-    return Evidence(title: e.title, detail: e.detail);
-  }).toList();
+  // ═══════════════════════════════════════
+  // ═══ الأدلة — كل مشتبه عنده دليل ضده ═══
+  // ═══════════════════════════════════════
+  final evidencePool = <Evidence>[];
 
-  final testimonyPoolCopy = List<TestimonyTemplate>.from(kTestimonyPool)
+  // دليل قوي على القاتل
+  evidencePool.add(_killerEvidence(killerName, rng));
+
+  // دليل ضعيف على كل مشتبه تاني
+  for (int i = 0; i < suspectsList.length; i++) {
+    if (i != killerIndex) {
+      evidencePool.add(_fakeEvidence(suspectsList[i], rng));
+    }
+  }
+
+  // 2 أدلة عامة
+  final generalPool = List<EvidenceTemplate>.from(kEvidencePool)
     ..shuffle(rng);
-  final testimonies = testimonyPoolCopy.take(3).map((t) {
-    return Testimony(speaker: t.speaker, text: t.text);
-  }).toList();
+  for (final e in generalPool.take(2)) {
+    evidencePool.add(Evidence(title: e.title, detail: e.detail));
+  }
+
+  evidencePool.shuffle(rng);
+
+  // ═══════════════════════════════════════
+  // ═══ الشهادات — كلها بتكذب ═══
+  // ═══════════════════════════════════════
+  final testimonies = <Testimony>[];
+
+  // شهادة بتشاور على القاتل
+  testimonies.add(Testimony(
+    speaker: 'شاهد مجهول',
+    text: 'شفت $killerName حوالين مكان الجريمة الساعة 11:30.',
+  ));
+
+  // شهادات بتشاور على ناس تانية (كذب)
+  final fakeSuspects = List<String>.from(suspectsList)
+    ..remove(killerName)
+    ..shuffle(rng);
+
+  for (int i = 0; i < 2; i++) {
+    testimonies.add(Testimony(
+      speaker: 'شاهد ${i + 1}',
+      text: 'شفت ${fakeSuspects[i]} يخرج من المكان الساعة 11:45.',
+    ));
+  }
+
+  testimonies.shuffle(rng);
 
   final crimeScene =
       template.crimeScene.replaceAll('{VICTIM}', victimName);
 
   final killerSuspect = suspects[killerIndex];
   final solution =
-      '$killerName. ${killerSuspect.story}. '
-      'الأدلة بتشاور عليه. حكاية "${killerSuspect.alibi}" مكانتش دقيقة.';
+      '$killerName. الدليل الوحيد الحقيقي على $killerName كان '
+      '${evidencePool.firstWhere((e) => e.detail.contains(killerName)).title}. '
+      'كل الأدلة التانية كانت مضللة.';
 
   final hour = rng.nextInt(12) + 1;
   final minute = rng.nextInt(60);
@@ -145,11 +202,94 @@ Case generateCase(int caseId) {
       description: victimDesc,
     ),
     suspects: suspects,
-    evidences: evidences,
+    evidences: evidencePool,
     testimonies: testimonies,
     killer: killerName,
     solution: solution,
   );
+}
+
+// ═══════════════ أدلة القاتل ═══════════════
+Evidence _killerEvidence(String killerName, Random rng) {
+  final pool = [
+    Evidence(
+      title: 'بصمة إصبع مطابقة',
+      detail:
+          'بصمة إصبع على أداة الجريمة. التحليل مطابق لـ $killerName. '
+          'ده الدليل الأكيد.',
+    ),
+    Evidence(
+      title: 'كاميرا مراقبة',
+      detail:
+          'كاميرا شافت $killerName يدخل مكان الجريمة قبل الجريمة بـ 3 دقايق. '
+          'ده الدليل الأكيد.',
+    ),
+    Evidence(
+      title: 'شاهد عيان موثوق',
+      detail:
+          'شاهد موثوق شاف $killerName يخرج من المكان الساعة 11:45. '
+          'ده الدليل الأكيد.',
+    ),
+    Evidence(
+      title: 'تحليل DNA',
+      detail:
+          'شعرة على أداة الجريمة. التحليل مطابق لـ $killerName. '
+          'ده الدليل الأكيد.',
+    ),
+    Evidence(
+      title: 'رسالة مسجلة',
+      detail:
+          'رسالة على موبايل الضحية من $killerName: "هتيجي النهاردة؟". '
+          'ده الدليل الأكيد.',
+    ),
+    Evidence(
+      title: 'أثر أقدام مطابق',
+      detail:
+          'أثر أقدام بحجم $killerName على شباك الهروب. '
+          'ده الدليل الأكيد.',
+    ),
+  ];
+  return pool[rng.nextInt(pool.length)];
+}
+
+// ═══════════════ أدلة مضللة ═══════════════
+Evidence _fakeEvidence(String suspectName, Random rng) {
+  final pool = [
+    Evidence(
+      title: 'دليل غير مباشر',
+      detail:
+          '$suspectName كان متضايق من الضحية قبل الجريمة بأسبوع. '
+          'مفيش دليل على إنه كان في المكان.',
+    ),
+    Evidence(
+      title: 'خلفية مشبوهة',
+      detail:
+          '$suspectName كان مديون للضحية. بس كان في مكان تاني وقت الجريمة.',
+    ),
+    Evidence(
+      title: 'خلاف قديم',
+      detail:
+          'كان بين $suspectName والضحية خلاف على شغل. '
+          'بس $suspectName عنده شهود على وجوده في مكان تاني.',
+    ),
+    Evidence(
+      title: 'مكالمة مشبوهة',
+      detail:
+          'مكالمة بين $suspectName والضحية قبل الجريمة بـ ساعة. '
+          'المكالمة كانت عادية.',
+    ),
+    Evidence(
+      title: 'بصمة غامضة',
+      detail:
+          'بصمة على باب المكان. مش واضحة. ممكن تكون بتاعة $suspectName.',
+    ),
+    Evidence(
+      title: 'شيء شخصي',
+      detail:
+          'لقوا منديل فيه حاجة شخصية لـ $suspectName. بس مش دليل قاطع.',
+    ),
+  ];
+  return pool[rng.nextInt(pool.length)];
 }
 
 // ═══════════════ دوال مساعدة ═══════════════
@@ -161,6 +301,22 @@ String _randomName(Random rng) {
 }
 
 String _pickMotive(Random rng) {
+  final pool = [
+    'الضحية كان هيفضحه قدام الكل',
+    'الضحية كان هيفصله من شغله',
+    'الضحية سَرَق منه فلوس',
+    'كان بينهم عداوة قديمة',
+    'الضحية خطف حبيبته',
+    'الضحية اكتشف إنه بيغش',
+    'الضحية أخد مشروعه',
+    'الضحية هدد يبلغ عنه',
+    'الضحية قطع مصدر رزقه',
+    'الضحية فضحه في كتاب',
+  ];
+  return pool[rng.nextInt(pool.length)];
+}
+
+String _pickKillerMotive(Random rng) {
   final pool = [
     'الضحية كان هيفضحه قدام الكل',
     'الضحية كان هيفصله من شغله',
@@ -188,24 +344,4 @@ String _pickRelation(Random rng) {
     'زميل دراسة',
   ];
   return pool[rng.nextInt(pool.length)];
-}
-
-String _pickAlibi(Random rng, bool isKiller) {
-  if (isKiller) {
-    final falseAlibis = [
-      'كنت في البيت لوحدي',
-      'كنت في الشغل، مفيش حد معايا',
-      'كنت نايم',
-      'مشيت بدري، مفيش شهود',
-    ];
-    return falseAlibis[rng.nextInt(falseAlibis.length)];
-  } else {
-    final realAlibis = [
-      'كنت في البيت، أهلي شهود',
-      'كنت في الشغل، زمايلي شهود',
-      'كنت في مطعم مع صحابي',
-      'كنت في مكالمة مع صاحبي',
-    ];
-    return realAlibis[rng.nextInt(realAlibis.length)];
-  }
 }
